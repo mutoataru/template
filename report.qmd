@@ -1,0 +1,108 @@
+---
+title: "Analysis of Life Expectancy and GDP in Gapminder"
+author:
+  - Joel Nitta
+  - Taro Chiba
+date: 2023-11-07
+format: docx
+---
+
+```{r}
+#| label: setup
+#| echo: false
+#| message: false
+
+# Load packages
+library(tidyverse)
+library(scales)
+```
+
+```{r}
+#| label: load-data
+#| echo: false
+#| message: false
+
+# Load the data
+gapminder <- read_csv("https://raw.githubusercontent.com/data-analysis-chiba-2023/day04-tidy/main/data_raw/gapminder.csv")
+```
+
+## Introduction
+
+The "gapminder" dataset includes economic statistics collected for various countries from `r min(gapminder$year)` to `r max(gapminder$year)`. The original data come from the Gapminder website, <https://www.gapminder.org/>.
+
+The relationship between life expectancy and Gross Domestic Product (GDP) is generally expected to be positive, since people live longer as standard of living improves. However, the details of this relationship may vary between regions and over time (Preston, 1975).
+
+Here, we analyze the gapminder dataset to answer the following questions:
+
+- How does the relationship between life expectancy and GDP vary across continents?
+- Which countries show the biggest and smallest change in GDP over time?
+
+## Data visualization
+
+```{r}
+#| echo: false
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp, color = continent, size = pop)) +
+  geom_point(alpha = 0.6) +
+  facet_wrap(vars(year)) +
+  scale_x_log10(labels = label_comma()) +
+  labs(
+    title = "Figure 1",
+    subtitle = "Relationship between life expectancy and GDP from 1952 to 2007",
+    y = "Life Expectancy (years)",
+    x = "GDP per capita (USD)",
+    color = "Continent",
+    size = "Population"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| echo: false
+#| fig-height: 7
+#| fig-dpi: 500
+gdp_1952 <-
+  gapminder %>%
+  filter(year == 1952) %>%
+  select(country, continent, gdp_start = gdpPercap)
+
+gdp_2007 <-
+  gapminder %>%
+  filter(year == 2007) %>%
+  select(country, continent, gdp_end = gdpPercap)
+
+gdp_change <-
+  left_join(gdp_1952, gdp_2007, by = c("country", "continent")) %>%
+  mutate(
+    gdp_diff = gdp_end - gdp_start,
+    country = fct_reorder(country, gdp_diff))
+
+ggplot(gdp_change, aes(x = gdp_diff, y = country, fill = continent)) +
+  geom_col() +
+  labs(
+    title = "Figure 2",
+    subtitle = "Change in GDP from 1952 to 2007",
+    x = "Difference in GDP per capita (USD)",
+    y = "Country",
+    fill = "Continent"
+  ) +
+  theme_grey(base_size = 6)
+```
+
+{{< pagebreak >}}
+
+## Discussion
+
+Figure 1 shows the relationship between life expectancy and GDP per capita across time. There is a general positive relationship between the two, which shows that richer countries tend to have higher life expectancy, as expected.
+
+We can see that at both the start and end of the survey period, European countries are in the upper right (high GDP and life expectancy), whereas African countries are in the lower left (low GDP and life expectancy). However, there is a clear shift in the position of Asian countries: although they start in the lower left in the 1950s, by 2000 they have moved to the upper right. This is likely driven not only by the economic success of countries like China and India (large dots in the plot), but neighboring countries as well.
+
+Figure 2 shows the difference in GDP per capita from the start of the dataset (1952) to the end (2007). Similar to Figure 1, the countries that have the greatest growth in GDP are located in Europe, Asia, or the Americas. The country with the biggest increase in GDP is Singapore.
+Interestingly, two African countries can be seen that have moderate increases in GDP, Equatorial Guinea and Botswana. Kuwait is the only country with a **negative** change in GDP. This may be an error in the dataset, since it seems highly unlikely that an oil-rich country suffered such a huge economic downturn, but this needs to be investigated further, including cross-checking with other datasets.
+
+Overall, the data show that the biggest increases in both GDP and life expectancy during the second half of the 20th century have been in Asia, but also show that there is considerable variation in Africa.
+
+## References
+
+Preston, S. H (1975). “The Changing Relation between Mortality and Level of Economic Development”. Population Studies. 29 (2): 231–248. doi:10.2307/2173509.

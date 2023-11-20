@@ -1,9 +1,9 @@
 ---
 title: "Analysis of Life Expectancy and GDP in Gapminder"
 author:
-  - Joel Nitta
+  - Ataru Muto
   - Taro Chiba
-date: 2023-11-07
+date: 2023-11-15
 format: docx
 ---
 
